@@ -1,0 +1,51 @@
+version: '3.8'
+services:
+  nginx_proxy_manager:
+    container_name: npm
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    ports:
+      # These ports are in format <host-port>:<container-port>
+      - '80:80' # Public HTTP Port
+      - '443:443' # Public HTTPS Port
+      - '81:81' # Admin Web Port
+    volumes:
+      - './data:/data'
+      - './letsencrypt:/etc/letsencrypt'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+
+  apache22_php52:
+    image: php52-apache22_php52
+    build: .
+    volumes:
+      - './conf:/etc/httpd/conf'
+      - './php.ini:/usr/local/lib/php.ini'
+      - '/home/LOGS:/home/LOGS'
+      - '/etc/passwd:/etc/passwd'
+      - '/etc/group:/etc/group'
+      - './mysql:/var/lib/mysql'
+      - './Zend:/usr/local/Zend'
+      - '/home/adminroot/www:/home/adminroot/www'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    container_name: apache22_php52
+    restart: on-failure
+
+  mysql:
+    container_name: mysql
+    image: cytopia/mariadb-10.0
+    restart: on-failure
+    environment:
+      - 'MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}'
+    volumes:
+      - './my.cnf:/etc/my.cnf'
+      - './mysql:/var/lib/mysql'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    environment:
+      - 'PMA_ARBITRARY=1'
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
